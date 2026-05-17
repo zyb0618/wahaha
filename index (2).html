@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AD钙奶大冒险 - 30周年限定版</title>
+    <style>
+        @font-face {
+            font-family: 'Pixel';
+            src: local('Courier New'), local('Courier'), monospace;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Pixel', 'Courier New', monospace;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 960px;
+            max-height: 720px;
+            background: #000;
+            overflow: hidden;
+        }
+        
+        #gameContainer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        #gameContainer::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 60%, rgba(0,0,0,0.4) 100%);
+            pointer-events: none;
+            z-index: 101;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        #uiLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+            display: none;
+        }
+        
+        .ui-top {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            display: flex;
+            justify-content: space-between;
+            color: #fff;
+            font-size: 14px;
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000;
+            letter-spacing: 1px;
+        }
+        
+        .ui-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .ui-item span {
+            color: #FFD700;
+        }
+        
+        #touchControls {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            height: 140px;
+            display: none;
+            z-index: 60;
+            pointer-events: none;
+        }
+        
+        .touch-btn {
+            position: absolute;
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            backdrop-filter: blur(2px);
+        }
+        
+        .touch-btn:active {
+            background: rgba(230, 0, 18, 0.4);
+            border-color: rgba(230, 0, 18, 0.8);
+        }
+        
+        #btnLeft { bottom: 40px; left: 20px; width: 60px; height: 60px; }
+        #btnRight { bottom: 40px; left: 90px; width: 60px; height: 60px; }
+        #btnJump { bottom: 40px; right: 90px; width: 70px; height: 70px; }
+        #btnShoot { bottom: 40px; right: 20px; width: 60px; height: 60px; font-size: 16px; }
+        
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #004098;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            pointer-events: auto;
+        }
+        
+        .brand-logo {
+            width: 100px;
+            height: 140px;
+            margin-bottom: 16px;
+            background: url('picture1.png') center/contain no-repeat;
+            image-rendering: pixelated;
+            filter: drop-shadow(4px 4px 0 rgba(0,0,0,0.3));
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .game-title {
+            font-size: 28px;
+            color: #FFD700;
+            text-shadow: 
+                4px 4px 0 #E60012,
+                -2px -2px 0 #000;
+            letter-spacing: 4px;
+            margin-bottom: 8px;
+            text-align: center;
+            line-height: 1.3;
+        }
+        
+        .slogan {
+            font-size: 13px;
+            color: #fff;
+            background: #E60012;
+            padding: 8px 16px;
+            margin: 12px 0 24px 0;
+            border: 2px solid #FFD700;
+            text-align: center;
+            line-height: 1.5;
+            max-width: 90%;
+            animation: blink 2s infinite;
+        }
+        
+        .start-btn {
+            padding: 12px 40px;
+            font-size: 20px;
+            font-family: 'Pixel', monospace;
+            background: #E60012;
+            color: #fff;
+            border: 3px solid #fff;
+            cursor: pointer;
+            pointer-events: auto;
+            text-shadow: 2px 2px 0 #000;
+            margin-top: 10px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .start-btn:active {
+            transform: scale(0.95);
+            background: #ff1a1a;
+        }
+        
+        .controls-hint {
+            margin-top: 20px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            line-height: 1.8;
+        }
+        
+        .controls-hint span {
+            color: #FFD700;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 1px 6px;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .overlay-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            pointer-events: auto;
+            color: #fff;
+        }
+        
+        .overlay-title {
+            font-size: 36px;
+            color: #FFD700;
+            text-shadow: 4px 4px 0 #E60012;
+            margin-bottom: 16px;
+        }
+        
+        .overlay-score {
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        
+        .overlay-slogan {
+            font-size: 14px;
+            color: #FFD700;
+            margin: 16px 0;
+            text-align: center;
+            padding: 0 20px;
+        }
+        
+        .overlay-btn {
+            padding: 10px 32px;
+            font-size: 18px;
+            font-family: 'Pixel', monospace;
+            background: #E60012;
+            color: #fff;
+            border: 3px solid #FFD700;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .life-icon {
+            width: 12px;
+            height: 18px;
+            background: #fff;
+            border: 1px solid #009944;
+            position: relative;
+            display: inline-block;
+            margin-right: 2px;
+            border-radius: 0 0 3px 3px;
+        }
+        
+        .life-icon::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: 2px;
+            width: 6px;
+            height: 3px;
+            background: #C0C0C0;
+        }
+        
+        .life-icon::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: #009944;
+        }
+        
+        #comboDisplay {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #FFD700;
+            text-shadow: 3px 3px 0 #E60012;
+            display: none;
+            animation: comboPop 0.5s ease-out;
+        }
+        
+        @keyframes comboPop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.3); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        @media (max-height: 500px) {
+            .game-title { font-size: 22px; }
+            .slogan { font-size: 11px; }
+            .touch-btn { width: 50px; height: 50px; font-size: 20px; }
+            #btnLeft { left: 10px; bottom: 20px; }
+            #btnRight { left: 70px; bottom: 20px; }
+            #btnJump { right: 70px; bottom: 20px; width: 55px; height: 55px; }
+            #btnShoot { right: 10px; bottom: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="256" height="240"></canvas>
+        
+        <div id="uiLayer">
+            <div class="ui-top">
+                <div class="ui-item">SCORE:<span id="score">000000</span></div>
+                <div class="ui-item">TIME:<span id="time">300</span></div>
+                <div class="ui-item" id="livesBox"></div>
+            </div>
+            <div id="comboDisplay">连击 x<span id="comboNum">0</span></div>
+        </div>
+        
+        <div id="touchControls">
+            <div class="touch-btn" id="btnLeft">←</div>
+            <div class="touch-btn" id="btnRight">→</div>
+            <div class="touch-btn" id="btnJump">J</div>
+            <div class="touch-btn" id="btnShoot">Z</div>
+        </div>
+        
+        <div id="startScreen">
+            <div class="brand-logo"></div>
+            <div class="game-title">AD钙奶<br>大冒险</div>
+            <div class="slogan">AD钙奶30周年：不管几岁 快乐万岁</div>
+            <button class="start-btn" id="startBtn">开始游戏</button>
+            <div class="controls-hint">
+                <span>← →</span> 移动　<span>空格</span> 跳跃　<span>Z</span> 射击<br>
+                收集AD钙奶瓶补充生命　躲避密集弹幕
+            </div>
+        </div>
+        
+        <div id="gameOverScreen" class="overlay-screen">
+            <div class="overlay-title">GAME OVER</div>
+            <div class="overlay-score" id="finalScore">SCORE: 0</div>
+            <div class="overlay-slogan">AD钙奶30周年：不管几岁 快乐万岁</div>
+            <button class="overlay-btn" id="restartBtn1">再次挑战</button>
+        </div>
+        
+        <div id="winScreen" class="overlay-screen">
+            <div class="overlay-title" style="color: #FFD700;">恭喜通关!</div>
+            <div class="overlay-score" id="winScore">SCORE: 0</div>
+            <div class="overlay-slogan" style="font-size: 16px; color: #fff;">
+                AD钙奶30周年<br>不管几岁 快乐万岁
+            </div>
+            <div style="color: #FFD700; margin: 8px 0; font-size: 18px;">陪你酸酸甜甜 懂你可可爱爱</div>
+            <button class="overlay-btn" id="restartBtn2">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== FC/NES 8位机核心 ====================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        
+        const PAL = {
+            SKY: '#5C94FC', GROUND: '#C84C0C', GRASS: '#00A800',
+            WHITE: '#FFFFFF', RED: '#E60012', BLUE: '#004098',
+            GREEN: '#009944', GOLD: '#FFD700', SILVER: '#E0E0E0',
+            DARK: '#000000', PURPLE: '#8E44EC', ORANGE: '#FCA044',
+            GREY: '#808080', PINK: '#FC74B0', YELLOW: '#F8D800',
+            SKIN: '#FFCCAA', BROWN: '#8B4513'
+        };
+        
+        let gameState = 'start';
+        let frameCount = 0;
+        let score = 0;
+        let lives = 3;
+        let combo = 0;
+        let comboTimer = 0;
+        let timeLeft = 300;
+        let timeTimer = 0;
+        let cameraX = 0;
+        const LEVEL_LENGTH = 3200;
+        const GRAVITY = 0.25;
+        
+        let player, bullets = [], enemyBullets = [], enemies = [], items = [];
+        let platforms = [], particles = [], clouds = [], decorations = [];
+        
+        const keys = {};
+        const touchKeys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if(e.key === ' ' || e.key === 'z' || e.key === 'Z') e.preventDefault();
+        });
+        document.addEventListener('keyup', (e) => keys[e.key] = false);
+        
+        function setupTouch() {
+            const bind = (id, key) => {
+                const btn = document.getElementById(id);
+                const set = (v) => (e) => { e.preventDefault(); touchKeys[key] = v; };
+                btn.addEventListener('touchstart', set(true));
+                btn.addEventListener('touchend', set(false));
+                btn.addEventListener('touchcancel', set(false));
+            };
+            bind('btnLeft', 'ArrowLeft');
+            bind('btnRight', 'ArrowRight');
+            bind('btnJump', ' ');
+            bind('btnShoot', 'z');
+        }
+        
+        function pressed(k) { return keys[k] || touchKeys[k]; }
+        
+        function rect(x, y, w, h, c) {
+            ctx.fillStyle = c;
+            ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+        }
+        
+        function pixel(x, y, c) {
+            ctx.fillStyle = c;
+            ctx.fillRect(Math.floor(x), Math.floor(y), 1, 1);
+        }
+        
+        // ==================== AD钙奶产品精灵矩阵 ====================
+        const BOTTLE_SPRITE = [
+            [0,0,0,0,5,5,5,5,5,5,0,0,0,0,0,0],
+            [0,0,0,5,1,1,1,1,1,1,5,0,0,0,0,0],
+            [0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0],
+            [0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0],
+            [0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0],
+            [0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0],
+            [0,1,2,3,3,2,2,2,2,2,2,2,1,0,0,0],
+            [0,1,2,3,3,3,2,2,2,2,2,2,1,0,0,0],
+            [0,1,2,3,3,2,2,2,2,2,2,2,1,0,0,0],
+            [0,1,2,2,3,3,2,2,2,2,2,2,1,0,0,0],
+            [0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0],
+            [0,1,2,2,2,2,2,2,2,2,2,2,1,0,0,0],
+            [0,1,1,4,4,4,4,4,4,4,4,1,1,0,0,0],
+            [0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+            [0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+            [0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+            [0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+            [0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+            [0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+            [0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
+            [0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0],
+            [0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0],
+            [0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0],
+            [0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0],
+        ];
+        
+        const SPRITE_COLORS = [null, PAL.WHITE, PAL.GREEN, PAL.RED, PAL.GOLD, PAL.SILVER];
+        const BOTTLE_W = 16, BOTTLE_H = 24;
+        
+        function drawADBottle(x, y, scale, glow) {
+            const fx = Math.floor(x);
+            const fy = Math.floor(y);
+            const s = scale || 1;
+            
+            for (let r = 0; r < BOTTLE_H; r++) {
+                for (let c = 0; c < BOTTLE_W; c++) {
+                    const idx = BOTTLE_SPRITE[r][c];
+                    if (idx === 0) continue;
+                    const color = SPRITE_COLORS[idx];
+                    if (glow && idx === 0 && (r+c)%2===0) {
+                        let hasBottle = false;
+                        for(let dy=-1; dy<=1; dy++) {
+                            for(let dx=-1; dx<=1; dx++) {
+                                const nr=r+dy, nc=c+dx;
+                                if(nr>=0 && nr<BOTTLE_H && nc>=0 && nc<BOTTLE_W && BOTTLE_SPRITE[nr][nc]!==0)
+                                    hasBottle = true;
+                            }
+                        }
+                        if (hasBottle) {
+                            rect(fx + c*s, fy + r*s, s, s, PAL.GOLD);
+                            continue;
+                        }
+                    }
+                    rect(fx + c*s, fy + r*s, s, s, color);
+                }
+            }
+        }
+        
+        // ==================== 小男孩主角（银白头盔+红色披风） ====================
+        function drawBoy(x, y, facing, frame, vy, shooting, invincible) {
+            if (invincible && Math.floor(frame / 4) % 2 === 0) return;
+            
+            const fx = Math.floor(x);
+            const fy = Math.floor(y);
+            const f = facing > 0 ? 1 : -1; // 1=右, -1=左
+            
+            // 辅助：镜像绘制
+            const drawR = (ox, oy, w, h, c) => {
+                if (f > 0) rect(fx + ox, fy + oy, w, h, c);
+                else rect(fx + (16 - ox - w), fy + oy, w, h, c);
+            };
+            const drawPx = (ox, oy, c) => {
+                if (f > 0) pixel(fx + ox, fy + oy, c);
+                else pixel(fx + (15 - ox), fy + oy, c);
+            };
+            
+            // ===== 红色披风（根据跳跃状态变化） =====
+            if (vy < -1) {
+                // 上升：披风向上扬起（倒V形）
+                drawR(2, 2, 3, 3, PAL.RED);
+                drawR(11, 2, 3, 3, PAL.RED);
+                drawR(1, 0, 4, 3, PAL.RED);
+                drawR(11, 0, 4, 3, PAL.RED);
+                drawR(0, -2, 5, 3, PAL.RED);
+                drawR(11, -2, 5, 3, PAL.RED);
+                // 披风飘动细节
+                drawR(2, -3, 2, 2, PAL.RED);
+                drawR(12, -3, 2, 2, PAL.RED);
+            } else if (vy > 1) {
+                // 下降：披风水平向后飘动
+                drawR(-2, 5, 4, 3, PAL.RED);
+                drawR(14, 5, 4, 3, PAL.RED);
+                drawR(-3, 8, 5, 3, PAL.RED);
+                drawR(14, 8, 5, 3, PAL.RED);
+                drawR(-2, 11, 4, 3, PAL.RED);
+                drawR(14, 11, 4, 3, PAL.RED);
+                // 飘带尖端
+                drawR(-1, 14, 2, 2, PAL.RED);
+                drawR(15, 14, 2, 2, PAL.RED);
+            } else {
+                // 站立/行走：披风自然下垂
+                drawR(2, 6, 2, 4, PAL.RED);
+                drawR(12, 6, 2, 4, PAL.RED);
+                drawR(1, 10, 3, 4, PAL.RED);
+                drawR(12, 10, 3, 4, PAL.RED);
+                drawR(2, 14, 2, 3, PAL.RED);
+                drawR(12, 14, 2, 3, PAL.RED);
+                // 披风底部摆动
+                const capeSwing = Math.sin(frame * 0.15) * 1;
+                drawR(3 + capeSwing, 17, 2, 2, PAL.RED);
+                drawR(11 - capeSwing, 17, 2, 2, PAL.RED);
+            }
+            
+            // ===== 腿部（根据vy做跳跃动作） =====
+            if (vy < -0.5) {
+                // 上升：双腿弯曲（膝盖抬起）
+                drawR(3, 15, 3, 3, PAL.BLUE); // 左大腿
+                drawR(10, 15, 3, 3, PAL.BLUE); // 右大腿
+                drawR(2, 14, 2, 2, PAL.BLUE); // 左膝抬起
+                drawR(12, 14, 2, 2, PAL.BLUE); // 右膝抬起
+                drawR(3, 18, 3, 2, PAL.RED); // 左鞋
+                drawR(10, 18, 3, 2, PAL.RED); // 右鞋
+                // 跳跃特效线
+                drawR(4, 20, 1, 2, PAL.WHITE);
+                drawR(11, 20, 1, 2, PAL.WHITE);
+            } else if (vy > 0.5) {
+                // 下降：双腿伸直向下（准备落地）
+                drawR(3, 16, 3, 6, PAL.BLUE);
+                drawR(10, 16, 3, 6, PAL.BLUE);
+                drawR(3, 22, 3, 2, PAL.RED);
+                drawR(10, 22, 3, 2, PAL.RED);
+                // 下降气流线
+                drawR(4, 24, 1, 1, PAL.WHITE);
+                drawR(11, 24, 1, 1, PAL.WHITE);
+            } else {
+                // 地面：行走交替摆动
+                const walk = Math.sin(frame * 0.3);
+                if (walk > 0) {
+                    drawR(3, 16, 3, 4, PAL.BLUE);
+                    drawR(3, 20, 3, 2, PAL.RED);
+                    drawR(10, 16, 3, 5, PAL.BLUE);
+                    drawR(10, 21, 3, 2, PAL.RED);
+                } else {
+                    drawR(3, 16, 3, 5, PAL.BLUE);
+                    drawR(3, 21, 3, 2, PAL.RED);
+                    drawR(10, 16, 3, 4, PAL.BLUE);
+                    drawR(10, 20, 3, 2, PAL.RED);
+                }
+            }
+            
+            // ===== 身体（蓝色衣服 - 娃哈哈蓝） =====
+            drawR(3, 10, 10, 6, PAL.BLUE);
+            drawR(4, 8, 8, 2, PAL.BLUE);
+            // 衣服细节：白色条纹
+            drawR(4, 12, 8, 1, PAL.WHITE);
+            
+            // ===== 手臂 =====
+            if (shooting) {
+                // 射击：朝向侧手臂向前伸直
+                if (f > 0) {
+                    rect(fx + 12, fy + 9, 5, 2, PAL.BLUE); // 右臂前伸
+                    rect(fx + 16, fy + 8, 2, 3, PAL.SKIN); // 手
+                    // 枪口火光
+                    rect(fx + 18, fy + 8, 2, 2, PAL.YELLOW);
+                    rect(fx + 19, fy + 9, 1, 1, PAL.RED);
+                } else {
+                    rect(fx - 1, fy + 9, 5, 2, PAL.BLUE);
+                    rect(fx - 2, fy + 8, 2, 3, PAL.SKIN);
+                    rect(fx - 4, fy + 8, 2, 2, PAL.YELLOW);
+                    rect(fx - 3, fy + 9, 1, 1, PAL.RED);
+                }
+                // 另一只手臂自然
+                drawR(2, 9, 2, 4, PAL.BLUE);
+            } else {
+                // 正常行走摆动
+                const armSwing = Math.sin(frame * 0.2) * 1.5;
+                drawR(1, 9 + armSwing, 2, 4, PAL.BLUE);
+                drawR(13, 9 - armSwing, 2, 4, PAL.BLUE);
+                // 手（肤色）
+                drawR(1, 13 + armSwing, 2, 2, PAL.SKIN);
+                drawR(13, 13 - armSwing, 2, 2, PAL.SKIN);
+            }
+            
+            // ===== 头部（肤色脸+银白头盔） =====
+            // 脸
+            drawR(4, 3, 8, 5, PAL.SKIN);
+            // 眼睛（黑+白高光）
+            const eyeOff = f > 0 ? 1 : 0;
+            drawR(5 + eyeOff, 4, 2, 2, PAL.DARK);
+            drawR(8 + eyeOff, 4, 2, 2, PAL.DARK);
+            drawPx(5 + eyeOff, 4, PAL.WHITE);
+            drawPx(8 + eyeOff, 4, PAL.WHITE);
+            // 嘴巴（微笑）
+            drawR(6, 6, 4, 1, PAL.RED);
+            drawPx(5, 6, PAL.RED);
+            drawPx(10, 6, PAL.RED);
+            // 腮红
+            drawPx(4, 5, '#FF9999');
+            drawPx(11, 5, '#FF9999');
+            
+            // 银白头盔
+            drawR(3, 0, 10, 3, PAL.SILVER);
+            drawR(4, 3, 8, 1, PAL.SILVER); // 头盔下沿
+            drawR(3, 1, 1, 2, PAL.SILVER); // 左耳罩
+            drawR(12, 1, 1, 2, PAL.SILVER); // 右耳罩
+            // 头盔高光
+            drawR(5, 1, 2, 1, PAL.WHITE);
+            drawR(8, 1, 2, 1, PAL.WHITE);
+            // 头盔顶部装饰（娃哈哈红小点）
+            drawR(7, 0, 2, 1, PAL.RED);
+        }
+        
+        // ==================== 敌人绘制 ====================
+        function drawEnemySlime(x, y, frame) {
+            const fx = Math.floor(x), fy = Math.floor(y);
+            const bounce = Math.abs(Math.sin(frame * 0.1)) * 2;
+            rect(fx+2, fy+4+bounce, 12, 8, '#00CC00');
+            rect(fx+4, fy+2+bounce, 8, 2, '#00CC00');
+            rect(fx+3, fy+5+bounce, 3, 3, PAL.WHITE);
+            rect(fx+10, fy+5+bounce, 3, 3, PAL.WHITE);
+            rect(fx+4, fy+6+bounce, 2, 2, PAL.RED);
+            rect(fx+11, fy+6+bounce, 2, 2, PAL.RED);
+            rect(fx+6, fy+9+bounce, 4, 1, PAL.DARK);
+        }
+        
+        function drawEnemyRobot(x, y, frame) {
+            const fx = Math.floor(x), fy = Math.floor(y);
+            const flash = Math.floor(frame / 8) % 2;
+            rect(fx+2, fy+2, 12, 12, '#4682B4');
+            rect(fx+4, fy+0, 8, 2, PAL.GREY);
+            rect(fx+5, fy+5, 6, 4, flash ? PAL.RED : PAL.YELLOW);
+            rect(fx+14, fy+6, 4, 2, PAL.GREY);
+            rect(fx+3, fy+14, 4, 4, PAL.GREY);
+            rect(fx+9, fy+14, 4, 4, PAL.GREY);
+        }
+        
+        function drawEnemyGhost(x, y, frame, px) {
+            const fx = Math.floor(x), fy = Math.floor(y);
+            const bob = Math.sin(frame * 0.08) * 3;
+            rect(fx+2, fy+2+bob, 12, 10, PAL.PURPLE);
+            rect(fx+0, fy+6+bob, 2, 6, PAL.PURPLE);
+            rect(fx+14, fy+6+bob, 2, 6, PAL.PURPLE);
+            const look = px > x ? 1 : 0;
+            rect(fx+4+look, fy+4+bob, 2, 2, PAL.YELLOW);
+            rect(fx+9+look, fy+4+bob, 2, 2, PAL.YELLOW);
+        }
+        
+        // ==================== 红色子弹（主角） ====================
+        function drawPlayerBullet(x, y) {
+            // 红色水滴/圆形子弹
+            rect(x-1, y-1, 4, 4, PAL.RED);
+            rect(x, y-2, 2, 6, PAL.RED);
+            rect(x-2, y, 6, 2, PAL.RED);
+            // 中心亮点
+            pixel(x, y, PAL.YELLOW);
+            pixel(x+1, y, PAL.WHITE);
+            // 拖尾
+            rect(x-1, y+3, 2, 2, 'rgba(230,0,18,0.5)');
+        }
+        
+        function drawEnemyBullet(x, y) {
+            rect(x-1, y-1, 3, 3, PAL.RED);
+            pixel(x, y, PAL.YELLOW);
+        }
+        
+        function drawBrick(x, y, w, h) {
+            rect(x, y, w, h, PAL.GROUND);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
+            ctx.beginPath();
+            ctx.moveTo(x, y+h/2);
+            ctx.lineTo(x+w, y+h/2);
+            ctx.moveTo(x+w/2, y);
+            ctx.lineTo(x+w/2, y+h/2);
+            ctx.moveTo(x+w/4, y+h/2);
+            ctx.lineTo(x+w/4, y+h);
+            ctx.moveTo(x+w*3/4, y+h/2);
+            ctx.lineTo(x+w*3/4, y+h);
+            ctx.stroke();
+        }
+        
+        function drawPlatform(x, y, w, h) {
+            rect(x, y, w, 4, PAL.GRASS);
+            rect(x, y+4, w, h-4, '#8B4513');
+            for(let i=0; i<<w; i+=8) {
+                pixel(x+i, y-1, PAL.GRASS);
+                pixel(x+i+4, y-2, PAL.GRASS);
+            }
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
+        }
+        
+        function drawCloud(x, y, scale) {
+            const s = scale;
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.fillRect(x, y+10*s, 60*s, 20*s);
+            ctx.fillRect(x+10*s, y, 40*s, 15*s);
+            ctx.fillRect(x+20*s, y-10*s, 20*s, 15*s);
+        }
+        
+        function drawFlag(x, y) {
+            rect(x, y, 2, 40, '#8B4513');
+            rect(x+2, y, 24, 16, PAL.RED);
+            rect(x+2, y+4, 24, 2, PAL.WHITE);
+            rect(x+2, y+10, 24, 2, PAL.WHITE);
+            pixel(x+12, y+7, PAL.YELLOW);
+        }
+        
+        // ==================== 实体类 ====================
+        class Player {
+            constructor() {
+                this.x = 32; this.y = 160;
+                this.w = 16; this.h = 24;
+                this.vx = 0; this.vy = 0;
+                this.facing = 1;
+                this.grounded = false;
+                this.invincible = 0;
+                this.shootTimer = 0;
+                this.runAccel = 0.1;
+                this.maxSpeed = 2.5;
+                this.friction = 0.85;
+                this.jumpVel = -5.5;
+            }
+            
+            update() {
+                let shooting = false;
+                
+                if (pressed('ArrowLeft')) {
+                    this.vx -= this.runAccel;
+                    this.facing = -1;
+                } else if (pressed('ArrowRight')) {
+                    this.vx += this.runAccel;
+                    this.facing = 1;
+                } else {
+                    this.vx *= this.friction;
+                }
+                
+                if (this.vx > this.maxSpeed) this.vx = this.maxSpeed;
+                if (this.vx < -this.maxSpeed) this.vx = -this.maxSpeed;
+                if (Math.abs(this.vx) < 0.01) this.vx = 0;
+                
+                if (pressed(' ') && this.grounded) {
+                    this.vy = this.jumpVel;
+                    this.grounded = false;
+                    for(let i=0; i<<4; i++) particles.push(new Particle(this.x+8, this.y+20, PAL.WHITE));
+                }
+                if (!pressed(' ') && this.vy < -2) this.vy *= 0.8;
+                
+                if ((pressed('z') || pressed('Z')) && this.shootTimer <= 0) {
+                    bullets.push(new Bullet(this.x + (this.facing>0?16:0), this.y+10, this.facing, false));
+                    this.shootTimer = 20;
+                    shooting = true;
+                }
+                if (this.shootTimer > 0) this.shootTimer--;
+                
+                this.vy += GRAVITY;
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                this.grounded = false;
+                platforms.forEach(p => {
+                    if (this.x+this.w > p.x && this.x < p.x+p.w &&
+                        this.y+this.h > p.y && this.y+this.h < p.y+p.h+8 &&
+                        this.vy >= 0) {
+                        this.y = p.y - this.h;
+                        this.vy = 0;
+                        this.grounded = true;
+                    }
+                });
+                
+                if (this.invincible > 0) this.invincible--;
+                if (this.x < 0) { this.x = 0; this.vx = 0; }
+                
+                // 保存射击状态用于绘制
+                this.isShooting = shooting;
+            }
+            
+            draw() {
+                drawBoy(this.x, this.y, this.facing, frameCount, this.vy, this.isShooting, this.invincible > 0);
+            }
+            
+            hurt() {
+                if (this.invincible > 0) return;
+                lives--;
+                updateUI();
+                if (lives <= 0) {
+                    gameOver();
+                } else {
+                    this.invincible = 90;
+                    this.vy = -4;
+                    this.vx = -this.facing * 2;
+                    for(let i=0; i<<8; i++) particles.push(new Particle(this.x+8, this.y+10, PAL.YELLOW));
+                }
+            }
+        }
+        
+        class Bullet {
+            constructor(x, y, dir, isEnemy) {
+                this.x = x; this.y = y;
+                this.dir = dir;
+                this.speed = isEnemy ? 1.5 : 5;
+                this.isEnemy = isEnemy;
+                this.w = isEnemy ? 3 : 6;
+                this.h = isEnemy ? 3 : 6;
+                this.life = 120;
+            }
+            
+            update() {
+                this.x += this.dir * this.speed;
+                this.life--;
+            }
+            
+            draw() {
+                if (this.isEnemy) drawEnemyBullet(this.x, this.y);
+                else drawPlayerBullet(this.x, this.y);
+            }
+        }
+        
+        class Enemy {
+            constructor(x, y, type) {
+                this.x = x; this.y = y;
+                this.w = 16; this.h = 16;
+                this.type = type;
+                this.hp = type === 'robot' ? 3 : (type==='ghost'?2:1);
+                this.dead = false;
+                this.deadTimer = 30;
+                this.vx = type === 'ghost' ? 0 : (Math.random()>0.5?1:-1);
+                this.startX = x;
+                this.patrol = 80;
+                this.shootTimer = 60 + Math.random()*60;
+                this.bob = Math.random() * Math.PI * 2;
+            }
+            
+            update() {
+                if (this.dead) { this.deadTimer--; return; }
+                this.bob += 0.05;
+                
+                if (this.type === 'slime') {
+                    this.x += this.vx * 0.5;
+                    if (Math.abs(this.x - this.startX) > this.patrol) this.vx *= -1;
+                } else if (this.type === 'robot') {
+                    this.x += this.vx * 0.3;
+                    if (Math.abs(this.x - this.startX) > this.patrol) this.vx *= -1;
+                    this.shootTimer--;
+                    if (this.shootTimer <= 0 && Math.abs(this.x - player.x) < 160) {
+                        const dir = this.x < player.x ? 1 : -1;
+                        enemyBullets.push(new Bullet(this.x+8, this.y+8, dir, true));
+                        this.shootTimer = 90 + Math.random()*60;
+                    }
+                } else if (this.type === 'ghost') {
+                    const dx = player.x - this.x;
+                    const dy = player.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 200 && dist > 0) {
+                        this.x += (dx/dist) * 0.8;
+                        this.y += (dy/dist) * 0.8;
+                    }
+                    this.y += Math.sin(this.bob) * 0.3;
+                }
+            }
+            
+            draw() {
+                if (this.dead) {
+                    ctx.globalAlpha = this.deadTimer / 30;
+                    if (this.type === 'slime') drawEnemySlime(this.x, this.y, frameCount);
+                    else if (this.type === 'robot') drawEnemyRobot(this.x, this.y, frameCount);
+                    else drawEnemyGhost(this.x, this.y, frameCount, player.x);
+                    ctx.globalAlpha = 1;
+                    return;
+                }
+                if (this.type === 'slime') drawEnemySlime(this.x, this.y, frameCount);
+                else if (this.type === 'robot') drawEnemyRobot(this.x, this.y, frameCount);
+                else drawEnemyGhost(this.x, this.y, frameCount, player.x);
+            }
+            
+            hit() {
+                this.hp--;
+                if (this.hp <= 0) {
+                    this.dead = true;
+                    score += 100;
+                    combo++;
+                    comboTimer = 60;
+                    showCombo();
+                    for(let i=0; i<<6; i++) particles.push(new Particle(this.x+8, this.y+8, 
+                        this.type==='robot'?PAL.GREY:(this.type==='ghost'?PAL.PURPLE:PAL.GRASS)));
+                } else {
+                    for(let i=0; i<<3; i++) particles.push(new Particle(this.x+8, this.y+8, PAL.WHITE));
+                }
+            }
+        }
+        
+        class Item {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.w = 16; this.h = 24;
+                this.bob = Math.random() * Math.PI * 2;
+                this.collected = false;
+                this.glowPhase = 0;
+            }
+            
+            update() {
+                this.bob += 0.08;
+                this.glowPhase += 0.1;
+            }
+            
+            draw() {
+                if (this.collected) return;
+                const bobY = Math.sin(this.bob) * 3;
+                const glow = Math.sin(this.glowPhase) > 0.5;
+                drawADBottle(this.x, this.y + bobY, 1, glow);
+            }
+        }
+        
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y;
+                this.vx = (Math.random()-0.5) * 4;
+                this.vy = (Math.random()-0.5) * 4;
+                this.life = 30 + Math.random()*20;
+                this.color = color;
+                this.size = Math.random() > 0.5 ? 2 : 1;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.15;
+                this.life--;
+            }
+            
+            draw() {
+                if (this.life <= 0) return;
+                ctx.globalAlpha = this.life / 40;
+                rect(this.x, this.y, this.size, this.size, this.color);
+                ctx.globalAlpha = 1;
+            }
+        }
+        
+        // ==================== 关卡生成 ====================
+        function generateLevel() {
+            platforms = []; enemies = []; items = []; clouds = []; decorations = [];
+            
+            for (let x = 0; x < LEVEL_LENGTH; x += 16) {
+                platforms.push({x: x, y: 208, w: 16, h: 32, type: 'ground'});
+            }
+            
+            const pits = [600, 1200, 2000, 2800];
+            pits.forEach(px => {
+                platforms = platforms.filter(p => p.x < px || p.x >= px+48);
+                platforms.push({x: px-32, y: 176, w: 32, h: 16, type: 'platform'});
+                platforms.push({x: px+48, y: 176, w: 32, h: 16, type: 'platform'});
+            });
+            
+            const platData = [
+                {x: 150, y: 160, w: 48, h: 16}, {x: 250, y: 144, w: 32, h: 16},
+                {x: 350, y: 160, w: 48, h: 16}, {x: 480, y: 128, w: 32, h: 16},
+                {x: 560, y: 144, w: 48, h: 16}, {x: 720, y: 160, w: 48, h: 16},
+                {x: 900, y: 128, w: 64, h: 16}, {x: 1050, y: 144, w: 32, h: 16},
+                {x: 1180, y: 160, w: 48, h: 16}, {x: 1350, y: 128, w: 48, h: 16},
+                {x: 1480, y: 144, w: 32, h: 16}, {x: 1580, y: 160, w: 48, h: 16},
+                {x: 1750, y: 128, w: 64, h: 16}, {x: 1920, y: 144, w: 48, h: 16},
+                {x: 2080, y: 160, w: 32, h: 16}, {x: 2180, y: 128, w: 48, h: 16},
+                {x: 2320, y: 144, w: 64, h: 16}, {x: 2480, y: 160, w: 32, h: 16},
+                {x: 2580, y: 128, w: 48, h: 16}, {x: 2720, y: 144, w: 48, h: 16},
+                {x: 2880, y: 160, w: 32, h: 16}, {x: 2980, y: 144, w: 48, h: 16},
+                {x: 3100, y: 160, w: 64, h: 16}
+            ];
+            
+            platData.forEach(p => {
+                platforms.push({...p, type: 'platform'});
+                if (Math.random() > 0.4) items.push(new Item(p.x + p.w/2 - 8, p.y - 28));
+                if (Math.random() > 0.5 && p.w > 40) {
+                    const types = ['slime', 'slime', 'robot', 'ghost'];
+                    enemies.push(new Enemy(p.x + p.w/2 - 8, p.y - 16, types[Math.floor(Math.random()*types.length)]));
+                }
+            });
+            
+            const groundEnemies = [200, 450, 800, 1100, 1500, 1800, 2300, 2600, 3000];
+            groundEnemies.forEach((ex, i) => {
+                const types = ['slime', 'robot', 'ghost', 'slime'];
+                enemies.push(new Enemy(ex, 192, types[i%4]));
+            });
+            
+            for (let i = 0; i < 12; i++) {
+                items.push(new Item(100 + i * 250, 100 + Math.random()*80));
+            }
+            
+            for (let i = 0; i < 10; i++) {
+                clouds.push({
+                    x: Math.random() * LEVEL_LENGTH,
+                    y: 20 + Math.random() * 60,
+                    scale: 0.5 + Math.random() * 0.5,
+                    speed: 0.1 + Math.random() * 0.2
+                });
+            }
+            
+            for (let i = 0; i < 8; i++) {
+                decorations.push({x: i * 400, y: 180, w: 120, h: 60, type: 'hill'});
+            }
+        }
+        
+        // ==================== 游戏主逻辑 ====================
+        function initGame() {
+            player = new Player();
+            bullets = []; enemyBullets = []; particles = [];
+            score = 0; lives = 3; combo = 0; comboTimer = 0;
+            timeLeft = 300; timeTimer = 0; cameraX = 0;
+            generateLevel();
+            updateUI();
+        }
+        
+        function update() {
+            if (gameState !== 'playing') return;
+            frameCount++;
+            
+            timeTimer++;
+            if (timeTimer >= 60) {
+                timeTimer = 0;
+                timeLeft--;
+                if (timeLeft <= 0) { player.hurt(); timeLeft = 300; }
+                document.getElementById('time').textContent = timeLeft;
+            }
+            
+            if (comboTimer > 0) {
+                comboTimer--;
+                if (comboTimer <= 0) { combo = 0; hideCombo(); }
+            }
+            
+            player.update();
+            
+            const targetCam = player.x - 100;
+            cameraX += (targetCam - cameraX) * 0.1;
+            if (cameraX < 0) cameraX = 0;
+            if (cameraX > LEVEL_LENGTH - 256) cameraX = LEVEL_LENGTH - 256;
+            
+            if (player.x > LEVEL_LENGTH - 80) { win(); return; }
+            
+            if (player.y > 260) {
+                player.hurt();
+                if (lives > 0) {
+                    player.x = Math.max(cameraX, 32);
+                    player.y = 160; player.vx = 0; player.vy = 0;
+                }
+            }
+            
+            bullets = bullets.filter(b => {
+                b.update();
+                for (let e of enemies) {
+                    if (!e.dead && rectIntersect(b, e)) { e.hit(); return false; }
+                }
+                return b.life > 0 && b.x > cameraX - 20 && b.x < cameraX + 276;
+            });
+            
+            enemyBullets = enemyBullets.filter(b => {
+                b.update();
+                if (rectIntersect(b, player)) { player.hurt(); return false; }
+                return b.life > 0;
+            });
+            
+            enemies.forEach(e => e.update());
+            enemies = enemies.filter(e => {
+                if (e.dead && e.deadTimer <= 0) return false;
+                if (!e.dead && rectIntersect(e, player)) player.hurt();
+                return true;
+            });
+            
+            items.forEach(item => item.update());
+            items = items.filter(item => {
+                if (rectIntersect(item, player)) {
+                    lives = Math.min(lives + 1, 5);
+                    score += 200;
+                    updateUI();
+                    for(let i=0; i<<8; i++) particles.push(new Particle(item.x+8, item.y+12, PAL.GOLD));
+                    return false;
+                }
+                return true;
+            });
+            
+            particles.forEach(p => p.update());
+            particles = particles.filter(p => p.life > 0);
+            
+            clouds.forEach(c => {
+                c.x += c.speed;
+                if (c.x > LEVEL_LENGTH) c.x = -100;
+            });
+        }
+        
+        function draw() {
+            rect(0, 0, 256, 240, PAL.SKY);
+            
+            clouds.forEach(c => {
+                const cx = Math.floor(c.x - cameraX * 0.3);
+                if (cx > -80 && cx < 280) drawCloud(cx, c.y, c.scale);
+            });
+            
+            decorations.forEach(d => {
+                const dx = Math.floor(d.x - cameraX * 0.2);
+                if (dx > -150 && dx < 300) {
+                    ctx.fillStyle = 'rgba(0, 160, 0, 0.3)';
+                    ctx.beginPath();
+                    ctx.moveTo(dx, d.y);
+                    ctx.lineTo(dx + d.w/2, d.y - d.h);
+                    ctx.lineTo(dx + d.w, d.y);
+                    ctx.fill();
+                }
+            });
+            
+            ctx.save();
+            ctx.translate(-Math.floor(cameraX), 0);
+            
+            platforms.forEach(p => {
+                if (p.x + p.w < cameraX || p.x > cameraX + 256) return;
+                if (p.type === 'ground') drawBrick(p.x, p.y, p.w, p.h);
+                else drawPlatform(p.x, p.y, p.w, p.h);
+            });
+            
+            drawFlag(LEVEL_LENGTH - 64, 168);
+            
+            items.forEach(item => item.draw());
+            enemies.forEach(e => e.draw());
+            bullets.forEach(b => b.draw());
+            enemyBullets.forEach(b => b.draw());
+            player.draw();
+            particles.forEach(p => p.draw());
+            
+            ctx.restore();
+        }
+        
+        function rectIntersect(a, b) {
+            return a.x < b.x + b.w && a.x + a.w > b.x &&
+                   a.y < b.y + b.h && a.y + a.h > b.y;
+        }
+        
+        // ==================== UI控制 ====================
+        function updateUI() {
+            document.getElementById('score').textContent = score.toString().padStart(6, '0');
+            const box = document.getElementById('livesBox');
+            box.innerHTML = '';
+            for (let i = 0; i < lives; i++) {
+                const heart = document.createElement('span');
+                heart.className = 'life-icon';
+                box.appendChild(heart);
+            }
+        }
+        
+        function showCombo() {
+            const display = document.getElementById('comboDisplay');
+            document.getElementById('comboNum').textContent = combo;
+            display.style.display = 'block';
+            display.style.animation = 'none';
+            display.offsetHeight;
+            display.style.animation = 'comboPop 0.5s ease-out';
+        }
+        
+        function hideCombo() { document.getElementById('comboDisplay').style.display = 'none'; }
+        
+        function gameOver() {
+            gameState = 'gameover';
+            document.getElementById('finalScore').textContent = 'SCORE: ' + score;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+            document.getElementById('uiLayer').style.display = 'none';
+            document.getElementById('touchControls').style.display = 'none';
+        }
+        
+        function win() {
+            gameState = 'win';
+            score += 1000;
+            document.getElementById('winScore').textContent = 'SCORE: ' + score;
+            document.getElementById('winScreen').style.display = 'flex';
+            document.getElementById('uiLayer').style.display = 'none';
+            document.getElementById('touchControls').style.display = 'none';
+        }
+        
+        function startGame() {
+            initGame();
+            gameState = 'playing';
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('winScreen').style.display = 'none';
+            document.getElementById('uiLayer').style.display = 'block';
+            document.getElementById('touchControls').style.display = 'block';
+            loop();
+        }
+        
+        function loop() {
+            if (gameState !== 'playing') return;
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+        
+        // ==================== 事件绑定 ====================
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn1').addEventListener('click', startGame);
+        document.getElementById('restartBtn2').addEventListener('click', startGame);
+        
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+            document.getElementById('touchControls').style.display = 'block';
+        }
+        setupTouch();
+        document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+        
+        // 初始标题背景（绘制静态小男孩）
+        function drawTitleBg() {
+            rect(0, 0, 256, 240, PAL.BLUE);
+            for(let i=0; i<<20; i++) rect(i*16, 200, 16, 40, PAL.GROUND);
+            // 静态小男孩
+            drawBoy(120, 140, 1, 0, 0, false, false);
+            // 静态奶瓶
+            drawADBottle(200, 160, 1, true);
+        }
+        drawTitleBg();
+    </script>
+</body>
+</html>
